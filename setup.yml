@@ -1,0 +1,151 @@
+---
+- name: Lubuntu 24.4 セットアップ
+  hosts: localhost
+  become: true
+
+  tasks:
+    - name: aptパッケージの更新とアップグレード
+      apt:
+        update_cache: yes
+        upgrade: dist
+
+    - name: 共通パッケージのインストール
+      apt:
+        name:
+          - curl
+          - git
+          - vim
+          - htop
+        state: present
+
+    - name: LXQt用ツールのインストール
+      apt:
+        name:
+          - lxqt-sudo
+          - qterminal
+        state: present
+
+    - name: WineHQリポジトリの追加
+      apt_key:
+        url: https://dl.winehq.org/wine-builds/winehq.key
+        state: present
+      become: true
+
+    - name: WineHQリポジトリをソースリストに追加
+      apt_repository:
+        repo: deb https://dl.winehq.org/wine-builds/ubuntu/ $(lsb_release -cs) main
+        state: present
+      become: true
+
+    - name: WineHQ安定版のインストール
+      apt:
+        name: winehq-stable
+        state: present
+
+    - name: Wine Geckoインストーラー（64ビット）のダウンロード
+      get_url:
+        url: https://dl.winehq.org/wine/wine-gecko/2.47.1/wine_gecko-2.47.1-x86_64.msi
+        dest: /usr/share/wine/gecko/wine_gecko-2.47.1-x86_64.msi
+        mode: '0644'
+
+    - name: Wine Gecko（64ビット）のインストール
+      command: wine64 /usr/share/wine/gecko/wine_gecko-2.47.1-x86_64.msi
+      environment:
+        WINEPREFIX: /home/{{ ansible_user }}/.wine64
+
+    - name: Google Chromeリポジトリキーの追加
+      apt_key:
+        url: https://dl.google.com/linux/linux_signing_key.pub
+        state: present
+
+    - name: Google Chromeリポジトリの追加
+      apt_repository:
+        repo: deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main
+        state: present
+
+    - name: Google Chromeのインストール
+      apt:
+        name: google-chrome-stable
+        state: present
+
+    - name: Microsoft GPGキーの追加
+      apt_key:
+        url: https://packages.microsoft.com/keys/microsoft.asc
+        state: present
+
+    - name: Visual Studio Codeリポジトリの追加
+      apt_repository:
+        repo: deb [arch=amd64] https://packages.microsoft.com/repos/code stable main
+        state: present
+
+    - name: Visual Studio Codeのインストール
+      apt:
+        name: code
+        state: present
+
+    - name: 不要なパッケージのクリーンアップ
+      apt:
+        autoremove: yes
+        autoclean: yes
+
+    - name: Copilot拡張のインストール用ディレクトリ作成
+      file:
+        path: /home/{{ ansible_user }}/.config/google-chrome/Default/Extensions/eodojedcgoicpkfcjkhghafoadllibab
+        state: directory
+        mode: '0755'
+
+    - name: Copilot拡張のダウンロード
+      get_url:
+        url: https://clients2.google.com/service/update2/crx?response=redirect&prodversion=91.0.4472.124&x=id%3Deodojedcgoicpkfcjkhghafoadllibab%26installsource%3Dondemand%26uc
+        dest: /home/{{ ansible_user }}/.config/google-chrome/Default/Extensions/eodojedcgoicpkfcjkhghafoadllibab/copilot_extension.crx
+        mode: '0644'
+
+    - name: Copilot拡張を解凍
+      unarchive:
+        src: /home/{{ ansible_user }}/.config/google-chrome/Default/Extensions/eodojedcgoicpkfcjkhghafoadllibab/copilot_extension.crx
+        dest: /home/{{ ansible_user }}/.config/google-chrome/Default/Extensions/eodojedcgoicpkfcjkhghafoadllibab/
+        remote_src: yes
+
+    - name: Skratchブックマークの追加
+      copy:
+      content: |
+        {
+        "checksum": "1",
+        "roots": {
+          "bookmark_bar": {
+          "children": [
+            {
+            "name": "Skratch",
+            "type": "url",
+            "url": "https://skratch.io"
+            }
+          ],
+          "name": "Bookmarks Bar",
+          "type": "folder"
+          }
+        },
+        "version": 1
+        }
+      dest: /home/{{ ansible_user }}/.config/google-chrome/Default/Bookmarks
+      mode: '0644'
+
+    - name: ChromeのホームページをYahooきっずに設定
+      copy:
+      content: |
+        {
+        "homepage": "https://kids.yahoo.co.jp/"
+        }
+      dest: /home/{{ ansible_user }}/.config/google-chrome/Default/Preferences
+      mode: '0644'
+
+    - name: Chromeのデフォルト検索エンジンをYahooきっずに設定
+      copy:
+      content: |
+        {
+        "default_search_provider": {
+          "name": "Yahooきっず",
+          "keyword": "yahoo-kids",
+                "search_url": "https://kids.yahoo.co.jp/search?p={searchTerms}"    }
+        }
+      dest: /home/{{ ansible_user }}/.config/google-chrome/Default/Preferences
+      mode: '0644'
