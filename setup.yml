@@ -1,5 +1,4 @@
----
-- name: Lubuntu 24.4 セットアップ
+- name: Xubuntu 24.4 セットアップ
   hosts: localhost
   become: true
 
@@ -18,33 +17,33 @@
           - htop
         state: present
 
-    - name: LXQt用ツールのインストール
+    - name: XFCE用ツールのインストール
       apt:
         name:
-          - lxqt-sudo
-          - qterminal
+          - xfce4-terminal
+          - xfce4-screenshooter
         state: present
 
     - name: Mozc日本語入力のインストール
       apt:
-      name:
-        - ibus-mozc
-      state: present
+        name:
+          - ibus-mozc
+        state: present
 
     - name: ibusの再起動
-      command: ibus restart
+      command: ibus-daemon -r -d -x
 
     - name: WineHQ用ディレクトリの作成
       file:
-      path: /etc/apt/keyrings
-      state: directory
-      mode: '0755'
+        path: /etc/apt/keyrings
+        state: directory
+        mode: '0755'
 
     - name: WineHQキーのダウンロードと保存
       get_url:
-      url: https://dl.winehq.org/wine-builds/winehq.key
-      dest: /etc/apt/keyrings/winehq-archive.key
-      mode: '0644'
+        url: https://dl.winehq.org/wine-builds/winehq.key
+        dest: /etc/apt/keyrings/winehq-archive.key
+        mode: '0644'
       register: winehq_key
 
     - name: WineHQキーをdearmor形式に変換
@@ -53,28 +52,35 @@
 
     - name: WineHQソースリストのダウンロード
       get_url:
-      url: https://dl.winehq.org/wine-builds/ubuntu/dists/noble/winehq-noble.sources
-      dest: /etc/apt/sources.list.d/winehq-noble.sources
-      mode: '0644'
+        url: https://dl.winehq.org/wine-builds/ubuntu/dists/noble/winehq-noble.sources
+        dest: /etc/apt/sources.list.d/winehq-noble.sources
+        mode: '0644'
 
     - name: aptパッケージリストの更新
       apt:
-      update_cache: yes
+        update_cache: yes
 
     - name: WineHQ安定版のインストール
       apt:
-      name: winehq-stable
-      state: present
-      install_recommends: yes
+        name: winehq-stable
+        state: present
+        install_recommends: yes
+
+    - name: Wine Geckoインストーラー用ディレクトリの作成
+      file:
+        path: /usr/share/wine/gecko
+        state: directory
+        mode: '0755'
 
     - name: Wine Geckoインストーラー（64ビット）のダウンロード
       get_url:
-        url: https://dl.winehq.org/wine/wine-gecko/2.47.1/wine_gecko-2.47.1-x86_64.msi
-        dest: /usr/share/wine/gecko/wine_gecko-2.47.1-x86_64.msi
+        url: https://dl.winehq.org/wine/wine-gecko/2.47.1/wine-gecko-2.47.1-x86_64.msi 
+        dest: /usr/share/wine/gecko/wine-gecko-2.47.1-x86_64.msi
         mode: '0644'
 
     - name: Wine Gecko（64ビット）のインストール
-      command: wine64 /usr/share/wine/gecko/wine_gecko-2.47.1-x86_64.msi
+      command: wine64 /usr/share/wine/gecko/wine-gecko-2.47.1-x86_64.msi
+      become_user: "{{ ansible_user }}"
       environment:
         WINEPREFIX: /home/{{ ansible_user }}/.wine64
 
