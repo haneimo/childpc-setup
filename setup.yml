@@ -25,6 +25,15 @@
           - qterminal
         state: present
 
+    - name: Mozc日本語入力のインストール
+      apt:
+      name:
+        - ibus-mozc
+      state: present
+
+    - name: ibusの再起動
+      command: ibus restart
+
     - name: WineHQリポジトリの追加
       apt_key:
         url: https://dl.winehq.org/wine-builds/winehq.key

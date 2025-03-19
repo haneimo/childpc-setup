@@ -1,3 +1,31 @@
+## 前段
+
+このリポジトリをcloneするため、gitをインストール
+
+1. **gitのインストール**  
+    以下のコマンドを実行して、gitをインストールします。
+
+    ```bash
+    sudo apt update
+    sudo apt install -y git
+    ```
+
+2. **インストール確認**  
+    以下のコマンドでgitが正しくインストールされたか確認します。
+
+    ```bash
+    git --version
+    ```
+
+    上記コマンドを実行すると、インストールされたgitのバージョンが表示されます。
+
+3. **SSHを使用したリポジトリのクローン**  
+    SSHを使用してリポジトリをクローンする場合、以下のコマンドを実行します。
+
+    ```bash
+    git clone git@github.com:haneimo/childpc-setup.git
+    ```
+
 ## Ansible Clientのインストール方法
 
 1. **必要なパッケージのインストール**  
