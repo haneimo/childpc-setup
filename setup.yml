@@ -34,22 +34,38 @@
     - name: ibusの再起動
       command: ibus restart
 
-    - name: WineHQリポジトリの追加
-      apt_key:
-        url: https://dl.winehq.org/wine-builds/winehq.key
-        state: present
-      become: true
+    - name: WineHQ用ディレクトリの作成
+      file:
+      path: /etc/apt/keyrings
+      state: directory
+      mode: '0755'
 
-    - name: WineHQリポジトリをソースリストに追加
-      apt_repository:
-        repo: deb https://dl.winehq.org/wine-builds/ubuntu/ $(lsb_release -cs) main
-        state: present
-      become: true
+    - name: WineHQキーのダウンロードと保存
+      get_url:
+      url: https://dl.winehq.org/wine-builds/winehq.key
+      dest: /etc/apt/keyrings/winehq-archive.key
+      mode: '0644'
+      register: winehq_key
+
+    - name: WineHQキーをdearmor形式に変換
+      command: gpg --dearmor -o /etc/apt/keyrings/winehq-archive.key /etc/apt/keyrings/winehq-archive.key
+      when: winehq_key is changed
+
+    - name: WineHQソースリストのダウンロード
+      get_url:
+      url: https://dl.winehq.org/wine-builds/ubuntu/dists/noble/winehq-noble.sources
+      dest: /etc/apt/sources.list.d/winehq-noble.sources
+      mode: '0644'
+
+    - name: aptパッケージリストの更新
+      apt:
+      update_cache: yes
 
     - name: WineHQ安定版のインストール
       apt:
-        name: winehq-stable
-        state: present
+      name: winehq-stable
+      state: present
+      install_recommends: yes
 
     - name: Wine Geckoインストーラー（64ビット）のダウンロード
       get_url:
@@ -114,47 +130,3 @@
         src: /home/{{ ansible_user }}/.config/google-chrome/Default/Extensions/eodojedcgoicpkfcjkhghafoadllibab/copilot_extension.crx
         dest: /home/{{ ansible_user }}/.config/google-chrome/Default/Extensions/eodojedcgoicpkfcjkhghafoadllibab/
         remote_src: yes
-
-    - name: Skratchブックマークの追加
-      copy:
-      content: |
-        {
-        "checksum": "1",
-        "roots": {
-          "bookmark_bar": {
-          "children": [
-            {
-            "name": "Skratch",
-            "type": "url",
-            "url": "https://skratch.io"
-            }
-          ],
-          "name": "Bookmarks Bar",
-          "type": "folder"
-          }
-        },
-        "version": 1
-        }
-      dest: /home/{{ ansible_user }}/.config/google-chrome/Default/Bookmarks
-      mode: '0644'
-
-    - name: ChromeのホームページをYahooきっずに設定
-      copy:
-      content: |
-        {
-        "homepage": "https://kids.yahoo.co.jp/"
-        }
-      dest: /home/{{ ansible_user }}/.config/google-chrome/Default/Preferences
-      mode: '0644'
-
-    - name: Chromeのデフォルト検索エンジンをYahooきっずに設定
-      copy:
-      content: |
-        {
-        "default_search_provider": {
-          "name": "Yahooきっず",
-          "keyword": "yahoo-kids",
-                "search_url": "https://kids.yahoo.co.jp/search?p={searchTerms}"    }
-        }
-      dest: /home/{{ ansible_user }}/.config/google-chrome/Default/Preferences
-      mode: '0644'
